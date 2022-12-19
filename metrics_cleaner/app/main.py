@@ -50,9 +50,7 @@ def clean_job(url, retention_time):
     return ' '
 """
 def web_server(port_num):
-    """
-    web server to keep the container running
-    """
+    #web server to keep the container running
     Handler = http.server.SimpleHTTPRequestHandler
     httpd = socketserver.TCPServer(('127.0.0.1', port_num), Handler)
 
