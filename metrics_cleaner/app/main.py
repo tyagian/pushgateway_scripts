@@ -1,9 +1,6 @@
 from prometheus_client import CollectorRegistry, Gauge, delete_from_gateway
-import requests, logging, time, argparse, multiprocessing, socket
+import requests, logging, time, argparse
 import logging as logger
-import http.server
-import socketserver
-
 #logger = basicConfig(level="INFO")
 
 def clean_job(url, retention_time):
@@ -51,7 +48,7 @@ def clean_job(url, retention_time):
     logger.info("Deleted "+ str(counter) +" jobs")
     
     return ' '
-
+"""
 def web_server(port_num):
     """
     web server to keep the container running
@@ -60,7 +57,7 @@ def web_server(port_num):
     httpd = socketserver.TCPServer(('127.0.0.1', port_num), Handler)
 
     return ' '
-
+"""
 
 if __name__ == '__main__':
 
@@ -70,7 +67,7 @@ if __name__ == '__main__':
     my_parser.add_argument('--retention_time', action='store', type=int, help='retention_time', default=900)
 
     # job frequency to 1 hour (in seconds) 
-    my_parser.add_argument('--job_frequency', action='store', type=int, help='job_frequency', default=3600)
+    #my_parser.add_argument('--job_frequency', action='store', type=int, help='job_frequency', default=3600)
 
     # log level: info, debug, error 
     my_parser.add_argument('--log_level', action='store', type=str, help='logging level', default='error', choices=['info','error','warning','debug'])
@@ -93,34 +90,19 @@ if __name__ == '__main__':
         datefmt='%Y-%m-%d %H:%M:%S')
 
     retention_time = int(args.retention_time)
-    job_frequency = int(args.job_frequency)
+    #job_frequency = int(args.job_frequency)
     url = args.url
     port_num = int(args.port)
-
-    # http socket to keep sidecar running
-    p = multiprocessing.Process(target=web_server, args = [port_num])
-    p.start()
-
+ 
     logger.info("#### Starting Pushgateway Cleaner ####")
-    logger.debug("Retention: %s and Frequency: %s (in seconds) running on port: %s" %(retention_time, job_frequency, port_num))
+    logger.debug("Retention is %s . Running on port:" %(retention_time, port))
 
-    s = socket.socket()
-    s.settimeout(5)   # 5 seconds
+    try:
+        clean_job(url,retention_time)
+        #time.sleep(job_frequency)
 
-    while True:
+    except ConnectionRefusedError:
+        print("Pushgateway not reachable")
 
-        try:
-            clean_job(url,retention_time)
-            time.sleep(job_frequency)
-
-        except ConnectionRefusedError:
-            print("Pushgateway not reachable")
-            time.sleep(10)
-
-        #except OSError:
-        #    print("Pushgateway not reachable")
-        #    time.sleep(10)
-
-        except Exception as e:
-            print(e)
-            time.sleep(10)
+    except Exception as e:
+        print(e)
